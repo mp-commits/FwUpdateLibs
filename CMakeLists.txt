@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.14)
+project(FwUpdateLibs)
+
+add_subdirectory(fragmentstore)
+add_subdirectory(updateserver)
+
+set(BUILD_TESTS 1)
+
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
