@@ -6,6 +6,7 @@ function(add_catch2_test_suite)
     set(multi_value_args
         TEST_SOURCES
         TEST_INCLUDE_PATHS
+        TEST_LINK_LIBRARIES
     )
 
     cmake_parse_arguments(ARG "" "${single_value_args}" "${multi_value_args}" ${ARGN})
@@ -22,6 +23,7 @@ function(add_catch2_test_suite)
     target_link_libraries(${ARG_TEST_NAME}
         PRIVATE
             Catch2::Catch2WithMain
+            ${ARG_TEST_LINK_LIBRARIES}
     )
 
     add_test(NAME ${ARG_TEST_NAME}

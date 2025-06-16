@@ -15,3 +15,5 @@ FetchContent_MakeAvailable(Catch2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_subdirectory(example)
+add_subdirectory(fragmentstore)
+add_subdirectory(imitation_flash)
