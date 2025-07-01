@@ -1,7 +1,5 @@
 project(tests)
 
-message(STATUS "Building unit tests for ${PROJECT_NAME}")
-
 include(FetchContent)
 
 FetchContent_Declare(

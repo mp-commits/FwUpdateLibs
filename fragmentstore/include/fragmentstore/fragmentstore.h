@@ -164,7 +164,7 @@ extern FA_ReturnCode_t FA_InitStruct(
  * @return Highest possible index
  */
 extern size_t FA_GetMaxFragmentIndex(
-    const FragmentArea_t* area);
+    const FragmentArea_t* const area);
 
 /** Erase the whole fragment area
  * 
@@ -173,7 +173,7 @@ extern size_t FA_GetMaxFragmentIndex(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_EraseArea(
-    const FragmentArea_t* area);
+    const FragmentArea_t* const area);
 
 /** Read the metadata from the area
  * 
@@ -187,7 +187,7 @@ extern FA_ReturnCode_t FA_EraseArea(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_ReadMetadata(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     Metadata_t* metadata);
 
 /** Read fragment from area
@@ -203,7 +203,7 @@ extern FA_ReturnCode_t FA_ReadMetadata(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_ReadFragment(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     size_t index,
     Fragment_t* fragment);
 
@@ -220,7 +220,7 @@ extern FA_ReturnCode_t FA_ReadFragment(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_WriteMetadata(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     const Metadata_t* metadata);
 
 /** Write firmware fragment to fragment area
@@ -237,7 +237,7 @@ extern FA_ReturnCode_t FA_WriteMetadata(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_WriteFragment(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     size_t index,
     const Fragment_t* fragment);
 
@@ -253,7 +253,7 @@ extern FA_ReturnCode_t FA_WriteFragment(
  * @return PARAM if parameters are invalid
  */
 extern FA_ReturnCode_t FA_EraseFragmentSlot(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     size_t index);
 
 /** Search fragment area slots using binary search until either:
@@ -270,7 +270,7 @@ extern FA_ReturnCode_t FA_EraseFragmentSlot(
  * @return PARAM=Function params invalid
  */
 extern FA_ReturnCode_t FA_FindLastFragment(
-    const FragmentArea_t* area,
+    const FragmentArea_t* const area,
     Fragment_t* fragment,
     size_t* index);
 

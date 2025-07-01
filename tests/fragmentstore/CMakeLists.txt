@@ -15,4 +15,5 @@ add_catch2_test_suite(
     
     TEST_LINK_LIBRARIES
         testing::flash
+        libs::ed25519
 )

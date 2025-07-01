@@ -9,6 +9,7 @@ add_subdirectory(updateserver)
 set(BUILD_TESTS 1)
 
 if (BUILD_TESTS)
+    message(STATUS "Building unit tests for ${PROJECT_NAME}")
     enable_testing()
     add_subdirectory(tests)
 endif()
