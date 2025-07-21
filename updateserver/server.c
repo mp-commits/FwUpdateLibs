@@ -251,8 +251,10 @@ size_t US_ProcessRequest(
         responseLength = HandlePutFragment(server, &arg);
         break;
     default:
-        const uint8_t code = PROTOCOL_NACK_REQUEST_OUT_OF_RANGE;
-        responseLength = BasicResponse(arg.sid, code, arg.res);
+        responseLength = BasicResponse(
+            arg.sid, 
+            PROTOCOL_NACK_REQUEST_OUT_OF_RANGE, 
+            arg.res);
         break;
     }
 
