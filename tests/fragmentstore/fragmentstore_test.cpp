@@ -134,7 +134,8 @@ static void InitTestSuite(FragmentArea_t& area, MemoryConfig_t& memConf)
     TEST_FIRMWARE_IMAGE.metadata.version = TEST_FIRMWARE_VERSION;
     TEST_FIRMWARE_IMAGE.metadata.rollbackNumber = 0U;
     TEST_FIRMWARE_IMAGE.metadata.firmwareId = TEST_FIRMWARE_ID;
-    TEST_FIRMWARE_IMAGE.metadata.fragmentCount = NumberOfFragmentsRequired();
+    TEST_FIRMWARE_IMAGE.metadata.startAddress = 0U;
+    TEST_FIRMWARE_IMAGE.metadata.firmwareSize = sizeof(TEST_FIRMWARE_IMAGE.binary);
     strcpy(TEST_FIRMWARE_IMAGE.metadata.name, TEST_FIRMWARE_NAME);
     ed25519_sign(
         TEST_FIRMWARE_IMAGE.metadata.firmwareSignature,

@@ -52,7 +52,8 @@ struct __attribute__((packed)) Metadata_s
     uint32_t    version;                /* Firmware version */
     uint32_t    rollbackNumber;         /* Anti rollback number */
     uint32_t    firmwareId;             /* Unique ID for this firmware */
-    uint32_t    fragmentCount;          /* Total number of fragments */
+    uint32_t    startAddress;           /* Jump address of the firmware */
+    uint32_t    firmwareSize;           /* Bytes following startAddress */
     char        name[32];               /* Firmware name string */
     uint8_t     firmwareSignature[64];  /* Firmware data signature */
     uint8_t     metadataSignature[64];  /* Metadata signature */
