@@ -7,6 +7,7 @@ add_subdirectory(fragmentstore)
 add_subdirectory(updateserver)
 
 if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
+add_subdirectory(hexsign)
 set(BUILD_TESTS 1)
 endif()
 
