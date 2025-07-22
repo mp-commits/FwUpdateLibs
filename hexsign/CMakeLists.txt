@@ -11,8 +11,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(argparse)
 
 add_executable(${PROJECT_NAME}
+    base64.cpp
     hexfile.cpp
     hexsign.cpp
+    openSSH_key.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
