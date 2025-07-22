@@ -32,9 +32,12 @@
 /*----------------------------------------------------------------------------*/
 
 #include <iostream>
+#include <fstream>
 #include <cstdint>
 #include <string>
 #include "argparse/argparse.hpp"
+#include "hexfile.hpp"
+#include "fragmentstore/fragmentstore.h"
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE TYPE DEFINITIONS                                                   */
@@ -78,9 +81,29 @@ int main(int argc, char* argv[])
     argparse::ArgumentParser parser("hexsign v0.1");
     AddArguments(parser);
 
+    const char* arg0 = argv[0];
+    const char* arg1 = "-i";
+    const char* arg2 = "C:/Users/mikael/Desktop/git/reliable_fw_update/new_freertos_app/build/Debug/new_freertos_app.hex";
+    const char* arg3 = "-o";
+    const char* arg4 = "C:/Users/mikael/Desktop/git/reliable_fw_update/new_freertos_app/build/Debug/new_freertos_app_signed.hex";
+    const char* arg5 = "-k";
+    const char* arg6 = "keyfile";
+
+    const char* my_argv[] = {
+        arg0,
+        arg1,
+        arg2,
+        arg3,
+        arg4,
+        arg5,
+        arg6,
+    };
+
+    int my_argc = sizeof(my_argv)/sizeof(my_argv[0]);
+
     try
     {
-        parser.parse_args(argc, argv);
+        parser.parse_args(my_argc, my_argv);
     }
     catch (const std::exception& err)
     {
@@ -92,6 +115,18 @@ int main(int argc, char* argv[])
     std::cout << "Input file: " << parser.get("-i") << std::endl;
     std::cout << "Output file: " << parser.get("-o") << std::endl;
     std::cout << "Key file: " << parser.get("-k") << std::endl;
+
+    std::ifstream inputFile(parser.get("-i"));
+
+    HexFile input;
+    input.FromStream(inputFile);
+
+    for (size_t i = 0; i < input.GetSectionCount(); i++)
+    {
+        const HexFile::Section& sec = input.GetSectionAt(i);
+
+        std::cout << "Section" << i << ": start: " << std::hex << sec.startAddress << " len: " << sec.data.size() << std::dec << std::endl;
+    }
 
     return 0;
 }

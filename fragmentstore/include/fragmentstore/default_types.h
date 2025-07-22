@@ -48,6 +48,7 @@ extern "C" {
 #define METADATA_TYPE_DEFINED
 struct __attribute__((packed)) Metadata_s
 {
+    char        magic[16];              /* Magic metadata identifier */
     uint32_t    type;                   /* Firmware type */
     uint32_t    version;                /* Firmware version */
     uint32_t    rollbackNumber;         /* Anti rollback number */

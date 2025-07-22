@@ -131,7 +131,7 @@ static uint16_t GetU16BE(const uint8_t* buf)
     return val;
 }
 
-static HexRecord_t ReadLine(const std::string line, size_t lineNumber)
+static HexRecord_t ReadLine(const std::string& line, size_t lineNumber)
 {
     if (line.at(0) != ':')
     {
@@ -147,7 +147,7 @@ static HexRecord_t ReadLine(const std::string line, size_t lineNumber)
 
     // 1. Convert hex file character string to byte array
 
-    std::string::const_iterator i = line.begin();
+    std::string::const_iterator i = line.begin() + 1;
 
     while(i < line.end())
     {
@@ -175,7 +175,7 @@ static HexRecord_t ReadLine(const std::string line, size_t lineNumber)
 
     record.address = GetU16BE(&data.data()[1]);
     record.type = (HexRecord::Type)(data.at(3));
-    record.data = std::vector<uint8_t>(data.begin() + 4U, data.begin() + data.size() - 5U);
+    record.data = std::vector<uint8_t>(data.begin() + 4, data.end() - 1);
 
     return record;
 }
