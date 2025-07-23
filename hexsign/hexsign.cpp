@@ -122,13 +122,19 @@ static uint32_t Crc32(const uint8_t* data, size_t size)
   return ~r;
 }
 
+static std::string Crc32Str(const uint8_t* data, size_t size)
+{
+    const uint32_t crc32 = Crc32(data, size);
+    std::stringstream crcStr;
+    crcStr << std::uppercase << std::hex << crc32;
+    return crcStr.str();
+}
+
 static void OutputKeySignature(const KeyPair& keyPair)
 {
     const auto pubKey = keyPair.GetPublicKey();
 
-    std::stringstream crcStr;
-    crcStr << std::uppercase << std::hex << Crc32(pubKey.data(), pubKey.size());
-    std::cout << "Public key CRC32: " << crcStr.str() << std::endl;
+    std::cout << "Public key CRC32: " << Crc32Str(pubKey.data(), pubKey.size()) << std::endl;
 }
 
 static bool InRange(uint32_t val, uint32_t low, uint32_t high)
@@ -213,6 +219,8 @@ static void VerifySectionSignature(const HexFile::Section& sec, const uint8_t* p
         return;
     }
 
+    std::cout << "Firmware signature CRC32: " << Crc32Str(meta->firmwareSignature, 64U) << std::endl;
+    std::cout << "Metadata signature CRC32: " << Crc32Str(meta->metadataSignature, 64U) << std::endl;
     std::cout << "Signed section at 0x" << std::hex << sec.startAddress << std::dec << std::endl;
 }
 
@@ -288,11 +296,11 @@ int main(int argc, char* argv[])
         return 2;
     }
 
-    HexFile input(inputFile);
+    HexFile hex(inputFile);
 
-    for (size_t i = 0; i < input.GetSectionCount(); i++)
+    for (size_t i = 0; i < hex.GetSectionCount(); i++)
     {
-        HexFile::Section& sec = input.GetSectionAt(i);
+        HexFile::Section& sec = hex.GetSectionAt(i);
 
         std::cout << "Section" << i << ": start: 0x" << std::hex << sec.startAddress << " len: " << std::dec << sec.data.size() << std::endl;
         const uint8_t* seed = keypair.GetPrivateKey().data();
@@ -300,6 +308,16 @@ int main(int argc, char* argv[])
         TrySignSection(sec, seed);
         VerifySectionSignature(sec, pubKey);
     }
+
+    std::ofstream outputFile(parser.get("-o"));
+
+    if (!outputFile.good())
+    {
+        std::cout << "Cannot open output hex file" << std::endl;
+        return 3;
+    }
+
+    hex.ToStream(outputFile);
 
     return 0;
 }

@@ -34,6 +34,7 @@
 #include "hexfile.hpp"
 #include <exception>
 #include <sstream>
+#include <iomanip>
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE TYPE DEFINITIONS                                                   */
@@ -131,6 +132,17 @@ static uint16_t GetU16BE(const uint8_t* buf)
     return val;
 }
 
+static uint32_t GetU32BE(const uint8_t* buf)
+{
+    uint32_t val = (uint32_t)(buf[3]);
+
+    val += ((uint32_t)(buf[2]) << 8U);
+    val += ((uint32_t)(buf[1]) << 16U);
+    val += ((uint32_t)(buf[0]) << 24U);
+
+    return val;
+}
+
 static HexRecord_t ReadLine(const std::string& line, size_t lineNumber)
 {
     if (line.at(0) != ':')
@@ -178,6 +190,83 @@ static HexRecord_t ReadLine(const std::string& line, size_t lineNumber)
     record.data = std::vector<uint8_t>(data.begin() + 4, data.end() - 1);
 
     return record;
+}
+
+static std::vector<uint8_t> U16BE(uint16_t val)
+{
+    std::vector<uint8_t> bytes;
+    bytes.push_back(val >> 8U);
+    bytes.push_back(val & 0xFFU);
+    return bytes;
+}
+
+static std::vector<uint8_t> U32BE(uint32_t val)
+{
+    std::vector<uint8_t> bytes;
+    bytes.push_back(val >> 24U);
+    bytes.push_back(val >> 16U);
+    bytes.push_back(val >> 8U);
+    bytes.push_back(val & 0xFFU);
+    return bytes;
+}
+
+static std::string HexLine(uint16_t address, HexRecord::Type recordType, std::vector<uint8_t> data)
+{
+    std::vector<uint8_t> bytes;
+
+    auto Checksum = [&bytes]() -> uint8_t
+    {
+        uint8_t checksum = 0;
+
+        for (auto b: bytes)
+        {
+            checksum += b;
+        }
+
+        return (~checksum) + 1U;
+    };
+
+    bytes.push_back(data.size());
+    bytes.push_back(address >> 8U);
+    bytes.push_back(address & 0xFFU);
+    bytes.push_back(recordType);
+    bytes.insert(bytes.end(), data.begin(), data.end());
+    bytes.push_back(Checksum());
+
+    std::stringstream hexBytes;
+    hexBytes << std::hex << std::uppercase;;
+    for (auto b: bytes)
+    {
+        hexBytes << std::setfill('0') << std::setw(2) << (uint16_t)(b);
+    }
+    
+    std::string line = ":";
+    line += hexBytes.str();
+    line += '\n';
+
+    return line;
+}
+
+static void WriteExtendedLinearSegment(std::ostream& out, uint32_t startAddress, const std::vector<uint8_t>& data)
+{
+    const uint16_t extendedLinearAddress = (uint16_t)(startAddress >> 16U);
+    uint32_t lineAddress = startAddress & 0xFFFFU;
+
+    if ((lineAddress + data.size()) > 0x10000U)
+    {
+        throw std::runtime_error("Extended segment contains too much data");
+    }
+
+    out << HexLine(0U, HexRecord::HEX_EXTENDED_LINEAR_ADDRESS, U16BE(extendedLinearAddress));
+
+    for (size_t i = 0; i < data.size(); i += 16)
+    {
+        const size_t dataLeft = data.size() - i;
+        const size_t subVecSize = (dataLeft < 16U) ? dataLeft : 16U;
+
+        std::vector<uint8_t> lineBytes(data.begin() + i, data.begin() + i + subVecSize);
+        out << HexLine(i, HexRecord::HEX_DATA, lineBytes);
+    }
 }
 
 HexFile::Section* HexFile::FindSection(uint32_t nextAddress)
@@ -256,7 +345,13 @@ void HexFile::FromStream(std::istream& input)
         }
         else if (record.type == HexRecord::HEX_START_LINEAR_ADDRESS)
         {
-            // Ignore execution start address for now
+            if (record.data.size() != 4U)
+            {
+                throw HexFileLineError(lineNumber, "Start linear address record not 4 bytes");
+            }
+
+            m_startLinearAddressSet = true;
+            m_startLinearAddress = GetU32BE(record.data.data());
         }
         else
         {
@@ -268,7 +363,32 @@ void HexFile::FromStream(std::istream& input)
 
 void HexFile::ToStream(std::ostream& output)
 {
-    (void)output;
+    constexpr uint32_t extendedSegmentSize = 0x10000U;
+
+    for (const auto& sec: m_sections)
+    {
+        size_t writePos = 0U;
+
+        while (writePos < sec.data.size())
+        {
+            const uint32_t segmentAddress = sec.startAddress + writePos;
+            const uint32_t maxLen = extendedSegmentSize - (segmentAddress & 0xFFFFU);
+
+            const size_t subVecLen = (writePos + maxLen) > sec.data.size() ? (sec.data.size() - writePos) : maxLen;
+            const std::vector<uint8_t> segmentData(sec.data.begin() + writePos, sec.data.begin() + writePos + subVecLen);
+
+            WriteExtendedLinearSegment(output, segmentAddress, segmentData);
+
+            writePos += subVecLen;
+        }
+    }
+
+    if (m_startLinearAddressSet)
+    {
+        output << HexLine(0U, HexRecord::HEX_START_LINEAR_ADDRESS, U32BE(m_startLinearAddress));
+    }
+
+    output << HexLine(0U, HexRecord::HEX_EOF, {});
 }
 
 /* EoF hexfile.cpp */

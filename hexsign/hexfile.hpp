@@ -53,8 +53,18 @@ public:
         Section(): startAddress(0U), data() {}
     };
 
-    HexFile() : m_sections({}) {}
-    HexFile(std::istream& input) : m_sections({}) {FromStream(input);}
+    HexFile() : 
+        m_sections({}), 
+        m_startLinearAddress(0U), 
+        m_startLinearAddressSet(false) 
+        {}
+    HexFile(std::istream& input) : 
+        m_sections({}), 
+        m_startLinearAddress(UINT32_MAX),
+        m_startLinearAddressSet(false)
+        {
+            FromStream(input);
+        }
     ~HexFile() {}
 
     void FromStream(std::istream& input);
@@ -74,6 +84,8 @@ private:
     Section* FindSection(uint32_t nextAddress);
 
     std::vector<Section> m_sections;
+    uint32_t m_startLinearAddress;
+    bool m_startLinearAddressSet;
 };
 
 /*----------------------------------------------------------------------------*/
