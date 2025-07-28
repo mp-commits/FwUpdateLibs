@@ -235,29 +235,9 @@ int main(int argc, char* argv[])
     argparse::ArgumentParser parser("hexsign v0.1");
     AddArguments(parser);
 
-    const char* arg0 = argv[0];
-    const char* arg1 = "-i";
-    const char* arg2 = "C:/Users/mikael/Desktop/git/reliable_fw_update/new_freertos_app/build/Debug/new_freertos_app.hex";
-    const char* arg3 = "-o";
-    const char* arg4 = "C:/Users/mikael/Desktop/git/reliable_fw_update/new_freertos_app/build/Debug/new_freertos_app_signed.hex";
-    const char* arg5 = "-k";
-    const char* arg6 = "C:/Users/mikael/.ssh/id_ed25519";
-
-    const char* my_argv[] = {
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-    };
-
-    int my_argc = sizeof(my_argv)/sizeof(my_argv[0]);
-
     try
     {
-        parser.parse_args(my_argc, my_argv);
+        parser.parse_args(argc, argv);
     }
     catch (const std::exception& err)
     {
