@@ -38,6 +38,11 @@ extern "C" {
 /* PUBLIC MACRO DEFINITIONS                                                   */
 /*----------------------------------------------------------------------------*/
 
+#define TRANSFER_SINGLE_PACKET          (0x00)
+#define TRANSFER_MULTI_PACKET_INIT      (0x01)
+#define TRANSFER_MULTI_PACKET_TRANSFER  (0x02)
+#define TRANSFER_MULTI_PACKET_END       (0x03)
+
 #define PROTOCOL_SID_PING               (0x01U)
 #define PROTOCOL_SID_READ_DATA_BY_ID    (0x02U)
 #define PROTOCOL_SID_WRITE_DATA_BY_ID   (0x03U)
