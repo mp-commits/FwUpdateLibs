@@ -24,7 +24,7 @@
  *
  * client.cpp
  *
- * @brief {Short description of the source file}
+ * @brief Update client
 */
 
 /*----------------------------------------------------------------------------*/
@@ -39,7 +39,7 @@
 /* MACRO DEFINITIONS                                                          */
 /*----------------------------------------------------------------------------*/
 
-constexpr size_t UDP_MAX_PAYLOAD_SIZE = 1472U;
+constexpr size_t UDP_MAX_PAYLOAD_SIZE = 1470U;
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE FUNCTION DEFINITIONS                                               */
@@ -115,7 +115,7 @@ std::vector<uint8_t> UpdateClient::_Request(const std::vector<uint8_t>& req)
     else
     {
         // Transfer has to divided into multiple packets
-        std::vector<uint8_t> init = {TRANSFER_SINGLE_PACKET};
+        std::vector<uint8_t> init = {TRANSFER_MULTI_PACKET_INIT};
         PutU32Be(init, req.size());
 
         if (IsPositiveTransferResponse(_SendRecv(init)))
@@ -126,24 +126,24 @@ std::vector<uint8_t> UpdateClient::_Request(const std::vector<uint8_t>& req)
                 payload.insert(payload.begin(), TRANSFER_MULTI_PACKET_TRANSFER);
                 if (!IsPositiveTransferResponse(_SendRecv(payload)))
                 {
-                    std::cerr << "Multi packet transfer init failed";
+                    std::cerr << "Multi packet transfer init failed" << std::endl;
                     return {};
                 }
             }
 
-            std::vector<uint8_t> end = {TRANSFER_SINGLE_PACKET};
-            transferResponse = _Request(end);
+            std::vector<uint8_t> end = {TRANSFER_MULTI_PACKET_END};
+            transferResponse = _SendRecv(end);
         }
         else
         {
-            std::cerr << "Multi packet transfer init failed";
+            std::cerr << "Multi packet transfer init failed" << std::endl;
             return {};
         }
     }
     
     if (transferResponse.size() < 2)
     {
-        std::cerr << "Invalid transfer response from server";
+        std::cerr << "Invalid transfer response from server" << std::endl;
         return {};
     }
 
@@ -165,17 +165,17 @@ std::vector<uint8_t> UpdateClient::ReadDataById(uint8_t id)
 {
     const auto res = _Request({PROTOCOL_SID_READ_DATA_BY_ID, id});
 
-    if (IsPositiveProtocolResponse(res, PROTOCOL_SID_PING))
+    if (IsPositiveProtocolResponse(res, PROTOCOL_SID_READ_DATA_BY_ID))
     {
         if (res.size() < 3U)
         {
-            std::cerr << "Invalid read data id response";
+            std::cerr << "Invalid read data id response" << std::endl;
             return {};
         }
         return std::vector<uint8_t>(res.begin() + 2, res.end());
     }
 
-    std::cerr << "Negative read data id response";
+    std::cerr << "Negative read data id response" << std::endl;
     return {};
 }
 
@@ -184,12 +184,12 @@ bool UpdateClient::WriteDataById(uint8_t id, const std::vector<uint8_t>& data)
     std::vector<uint8_t> req = {PROTOCOL_SID_READ_DATA_BY_ID, id};
     req.insert(req.end(), data.begin(), data.end());
   
-    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_PING))
+    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_WRITE_DATA_BY_ID))
     {
         return true;
     }
 
-    std::cerr << "Negative write data id response";
+    std::cerr << "Negative write data id response" << std::endl;
     return false;
 }
 
@@ -203,12 +203,12 @@ bool UpdateClient::PutMetadata(const Metadata_t& metadata)
         req.push_back(pMeta[i]);
     }
 
-    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_PING))
+    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_PUT_METADATA))
     {
         return true;
     }
 
-    std::cerr << "Negative put meatadata id response";
+    std::cerr << "Negative put meatadata id response" << std::endl;
     return false;
 }
 
@@ -222,12 +222,12 @@ bool UpdateClient::PutFragment(const Fragment_t& fragment)
         req.push_back(pFrag[i]);
     }
 
-    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_PING))
+    if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_PUT_FRAGMENT))
     {
         return true;
     }
 
-    std::cerr << "Negative put fragment id response";
+    std::cerr << "Negative put fragment id response" << std::endl;
     return false;
 }
 

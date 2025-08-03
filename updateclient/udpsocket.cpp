@@ -24,7 +24,7 @@
  *
  * udpsocket.cpp
  *
- * @brief {Short description of the source file}
+ * @brief UDP socket wrapper for windows and linux builds
 */
 
 /*----------------------------------------------------------------------------*/
@@ -34,9 +34,66 @@
 #include "udpsocket.hpp"
 #include "iostream"
 
+#include <sstream>
+#include <iomanip>
+
 /*----------------------------------------------------------------------------*/
 /* PUBLIC FUNCTION DEFINITIONS                                                */
 /*----------------------------------------------------------------------------*/
+
+#ifdef _WIN32
+
+static void PrintLastError()
+{
+    int code = WSAGetLastError();
+
+    std::cerr << "Failed with error code: " << code << "\n";
+
+    char* msg = nullptr;
+
+    FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+        nullptr, 
+        code, 
+        0, 
+        (LPSTR)&msg, 
+        0, 
+        nullptr
+    );
+
+    if (msg)
+    {
+        std::cerr << "Reason: " << msg;
+        LocalFree(msg);
+    }
+}
+
+#else
+
+#include <cerrno>
+
+void PrintLastError()
+{
+    std::cerr << "Failed with errno: " << errno << " (" << std::strerror(errno) << ")\n";
+}
+
+#endif
+
+static std::string Vec2Str(const std::vector<uint8_t>& vec)
+{
+    std::stringstream ss;
+    ss << std::hex << std::uppercase;
+
+    for (auto b: vec)
+    {
+        ss << std::setfill('0');
+        ss << std::setw(2);
+        ss << (uint32_t)b;
+        ss << " ";
+    }
+
+    return ss.str();
+}
 
 UdpSocket::UdpSocket(uint16_t port)
 {
@@ -45,7 +102,9 @@ UdpSocket::UdpSocket(uint16_t port)
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
 
-    SOCKET m_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    m_dbg = false;
+
+    m_sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (m_sock == INVALID_SOCKET)
     {
         std::cerr << "Socket creation failed.\n";
@@ -82,33 +141,55 @@ void UdpSocket::SetRemoteAddress(const char* ipv4, uint16_t port)
 
 void UdpSocket::Send(const std::vector<uint8_t>& data)
 {
-    int sent = sendto(m_sock, (const char*)data.data(), data.size(), 0,
-                      (sockaddr*)&m_remoteAddr, sizeof(m_remoteAddr));
+    if (m_dbg)
+    {
+        std::cout << "Sending " << data.size() << " bytes:" << Vec2Str(data) << std::endl;
+    }
+
+    int sent = sendto(
+        m_sock, 
+        (const char*)data.data(), 
+        data.size(), 
+        0,
+        (sockaddr*)&m_remoteAddr, 
+        sizeof(m_remoteAddr)
+    );
+
     if (sent == SOCKET_ERROR)
     {
-        std::cerr << "Send failed.\n";
+        PrintLastError();
+        std::cerr << "sendto failed.\n";
     }
 }
 
 std::vector<uint8_t> UdpSocket::Recv()
 {
     std::vector<uint8_t> recv;
-    recv.reserve(UINT16_MAX); // 64KB
+    recv.resize(1470);
 
     sockaddr_in from;
     int fromLen = sizeof(from);
 
-    int recvLen = recvfrom(m_sock, (char*)recv.data(), recv.size(), 0, (sockaddr*)&from, &fromLen);
+    int recvLen = recvfrom(
+        m_sock, 
+        (char*)recv.data(), 
+        recv.size(), 
+        0, 
+        (sockaddr*)&from, 
+        &fromLen
+    );
+
     if (recvLen < 0)
     {
-        std::cerr << "Recv failed.\n";
+        PrintLastError();
+        std::cerr << "recvfrom failed.\n";
         return {};
     }
 
     // Set remote address automatically if not set
-    if (m_remoteAddr.sin_addr.s_addr != INADDR_ANY)
+    if (m_remoteAddr.sin_addr.s_addr == INADDR_ANY)
     {
-        m_remoteAddr.sin_addr.s_addr = from.sin_addr.s_addr;
+        m_remoteAddr = from;
     }
 
     if (from.sin_addr.s_addr != m_remoteAddr.sin_addr.s_addr)
@@ -117,6 +198,12 @@ std::vector<uint8_t> UdpSocket::Recv()
     }
 
     recv.resize(recvLen);
+
+    if (m_dbg)
+    {
+        std::cout << "Received " << recv.size() << " bytes:" << Vec2Str(recv) << std::endl;
+    }
+
     return recv;
 }
 

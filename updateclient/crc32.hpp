@@ -22,56 +22,41 @@
  *
  * -----------------------------------------------------------------------------
  *
- * udpsocket.hpp
+ * crc32.hpp
  *
- * @brief UDP socket wrapper for windows and linux builds
+ * @brief Quick CRC32 function
 */
 
-#ifndef UDPSOCKET_H_
-#define UDPSOCKET_H_
+#ifndef CRC32_H_
+#define CRC32_H_
 
 /*----------------------------------------------------------------------------*/
 /* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
-#include <string>
-#include <vector>
 #include <cstdint>
 
-#ifdef _WIN32
-  #include <winsock2.h>
-#else
-  #include <unistd.h>
-  #include <sys/socket.h>
-  #include <arpa/inet.h>
-  #define INVALID_SOCKET -1
-  #define SOCKET_ERROR -1
-  typedef int SOCKET;
-#endif
-
 /*----------------------------------------------------------------------------*/
-/* PUBLIC TYPE DEFINITIONS                                                    */
+/* PUBLIC FUNCTION DECLARATIONS                                               */
 /*----------------------------------------------------------------------------*/
 
-class UdpSocket
+static inline uint32_t InlineCrc32(const uint8_t* data, size_t size)
 {
-public:
-    UdpSocket(uint16_t port);
-    ~UdpSocket();
+  uint32_t r = ~0; const uint8_t *end = data + size;
+ 
+  while(data < end)
+  {
+    r ^= *data++;
+ 
+    for(int i = 0; i < 8; i++)
+    {
+      uint32_t t = ~((r&1) - 1); r = (r>>1) ^ (0xEDB88320 & t);
+    }
+  }
+ 
+  return ~r;
+}
 
-    void SetRemoteAddress(const char* ipv4, uint16_t port);
+/* EoF crc32.hpp */
 
-    void Send(const std::vector<uint8_t>& data);
-    std::vector<uint8_t> Recv();
-
-    void SetDebug(bool set) { m_dbg = set; }
-
-private:
-    bool        m_dbg;
-    SOCKET      m_sock;
-    sockaddr_in m_remoteAddr;
-};
-
-/* EoF udpsocket.hpp */
-
-#endif /* UDPSOCKET_H_ */
+#endif /* CRC32_H_ */

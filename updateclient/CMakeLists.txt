@@ -30,6 +30,7 @@ target_link_options(${PROJECT_NAME}
 project(testserver)
 
 add_executable(${PROJECT_NAME}
+    udpsocket.cpp
     testserver.cpp
 )
 

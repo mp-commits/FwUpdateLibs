@@ -24,7 +24,7 @@
  *
  * updateclient.cpp
  *
- * @brief {Short description of the source file}
+ * @brief Simple client for uploading firmware to a supported device
 */
 
 /*----------------------------------------------------------------------------*/
@@ -35,6 +35,7 @@
 #include "udpsocket.hpp"
 
 #include "argparse/argparse.hpp"
+#include "crc32.hpp"
 #include "fragmentstore/fragmentstore.h"
 #include "hexfile.hpp"
 #include "updateserver/protocol.h"
@@ -107,9 +108,9 @@ static void MakeFirmwareSections(std::string hexFileName, FirmwareSections_t& se
 static inline uint32_t DecodeU32Be(const std::vector<uint8_t>& vec)
 {
     uint32_t val = vec.at(3);
-    val = ((uint32_t)vec.at(2)) << 8U;
-    val = ((uint32_t)vec.at(1)) << 16U;
-    val = ((uint32_t)vec.at(0)) << 24U;
+    val += ((uint32_t)vec.at(2)) << 8U;
+    val += ((uint32_t)vec.at(1)) << 16U;
+    val += ((uint32_t)vec.at(0)) << 24U;
 
     return val;
 }
@@ -142,7 +143,7 @@ static void ReadFirmwareType(UpdateClient& client)
 
 static void ReadFirmwareName(UpdateClient& client)
 {
-    const auto data = client.ReadDataById(PROTOCOL_DATA_ID_FIRMWARE_TYPE);
+    const auto data = client.ReadDataById(PROTOCOL_DATA_ID_FIRMWARE_NAME);
     std::cout << "Firmware name: " << std::string(data.begin(), data.end()) << std::endl;
 }
 
@@ -170,7 +171,7 @@ int main(int argc, const char* argv[])
 
     if (client.PutMetadata(sec.metadata))
     {
-        std::cout << "Successfully uploaded metadata" << std::endl;
+        std::cout << "Successfully uploaded metadata: " << std::hex << InlineCrc32((const uint8_t*)&sec.metadata, sizeof(sec.metadata)) << std::endl;
     }
     else
     {
@@ -182,7 +183,7 @@ int main(int argc, const char* argv[])
     {
         if (client.PutFragment(frag))
         {
-            std::cout << "Successfully uploaded fragment at " << frag.startAddress << std::endl;
+            std::cout << "Successfully uploaded fragment at " << frag.startAddress << ": " << std::hex << InlineCrc32((const uint8_t*)&frag, sizeof(frag)) << std::endl;
         }
         else
         {
