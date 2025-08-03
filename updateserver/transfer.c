@@ -67,6 +67,11 @@ static size_t HandleSinglePacket(
     size_t packetSize,
     size_t maxPacketSize)
 {
+    if (packetSize < 2U)
+    {
+        return TransferResponse(packet, PROTOCOL_NACK_INVALID_REQUEST);
+    }
+
     tb->state = TRANSFER_IDLE;
     tb->msgSize = packetSize - 1U;
     tb->transferSize = 0U;
@@ -94,7 +99,7 @@ static size_t HandleTransferStart(
 
     const uint32_t transferSize = DecodeU32Be(&packet[1]);
 
-    if (transferSize > tb->bufSize)
+    if ((transferSize == 0U) || (transferSize > tb->bufSize))
     {
         return TransferResponse(packet, PROTOCOL_NACK_REQUEST_OUT_OF_RANGE);
     }
@@ -111,6 +116,11 @@ static size_t HandleTransferData(
     uint8_t* packet,
     size_t packetSize)
 {
+    if (packetSize < 2U)
+    {
+        return TransferResponse(packet, PROTOCOL_NACK_INVALID_REQUEST);
+    }
+
     // Wrong transfer order
     if (tb->state != TRANSFER_RX)
     {
@@ -129,7 +139,7 @@ static size_t HandleTransferData(
     // Larger than initialized transfer
     if ((tb->msgSize + dataSize) > tb->transferSize)
     {
-        return TransferResponse(packet, PROTOCOL_NACK_INVALID_REQUEST);
+        return TransferResponse(packet, PROTOCOL_NACK_REQUEST_OUT_OF_RANGE);
     }
 
     memcpy(&tb->buf[tb->msgSize], &packet[1], dataSize);
@@ -146,7 +156,7 @@ static size_t HandleTransferEnd(
 {
     if (packetSize != 1U)
     {
-        return 0U;
+        return TransferResponse(packet, PROTOCOL_NACK_INVALID_REQUEST);
     }
 
     // Wrong transfer order
@@ -207,7 +217,7 @@ extern size_t TRANSFER_Process(
 {
     if (IS_NULL(tb) ||
         IS_NULL(packet) ||
-        (packetSize < 2U) ||
+        (packetSize < 1U) ||
         (packetSize > tb->bufSize) ||
         (maxPacketSize < 6U))
     {
