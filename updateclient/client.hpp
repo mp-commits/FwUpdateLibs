@@ -34,9 +34,36 @@
 /* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
+#include "udpsocket.hpp"
+#include "fragmentstore/fragmentstore.h"
+
+#include <cstdint>
+
 /*----------------------------------------------------------------------------*/
 /* PUBLIC TYPE DEFINITIONS                                                    */
 /*----------------------------------------------------------------------------*/
+
+class UpdateClient
+{
+public:
+    UpdateClient(UdpSocket& sock): m_sock(sock) {}
+
+    bool Ping();
+
+    std::vector<uint8_t> ReadDataById(uint8_t id);
+
+    bool WriteDataById(uint8_t id, const std::vector<uint8_t>& data);
+
+    bool PutMetadata(const Metadata_t& metadata);
+
+    bool PutFragment(const Fragment_t& fragment);
+
+private:
+    std::vector<uint8_t> _SendRecv(const std::vector<uint8_t>& req);
+    std::vector<uint8_t> _Request(const std::vector<uint8_t>& req);
+
+    UdpSocket& m_sock;
+};
 
 /*----------------------------------------------------------------------------*/
 /* PUBLIC MACRO DEFINITIONS                                                   */

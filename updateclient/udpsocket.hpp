@@ -34,21 +34,42 @@
 /* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
+#include <string>
+#include <vector>
+#include <cstdint>
+
+#ifdef _WIN32
+  #include <winsock2.h>
+  #pragma comment(lib, "ws2_32.lib")
+  typedef int socklen_t;
+#else
+  #include <unistd.h>
+  #include <sys/socket.h>
+  #include <arpa/inet.h>
+  #define INVALID_SOCKET -1
+  #define SOCKET_ERROR -1
+  typedef int SOCKET;
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* PUBLIC TYPE DEFINITIONS                                                    */
 /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-/* PUBLIC MACRO DEFINITIONS                                                   */
-/*----------------------------------------------------------------------------*/
+class UdpSocket
+{
+public:
+    UdpSocket(uint16_t port);
+    ~UdpSocket();
 
-/*----------------------------------------------------------------------------*/
-/* PUBLIC VARIABLE DEFINITIONS                                                */
-/*----------------------------------------------------------------------------*/
+    void SetRemoteAddress(const char* ipv4, uint16_t port);
 
-/*----------------------------------------------------------------------------*/
-/* PUBLIC FUNCTION DECLARATIONS                                               */
-/*----------------------------------------------------------------------------*/
+    void Send(const std::vector<uint8_t>& data);
+    std::vector<uint8_t> Recv();
+
+private:
+    SOCKET      m_sock;
+    sockaddr_in m_remoteAddr;
+};
 
 /* EoF udpsocket.hpp */
 
