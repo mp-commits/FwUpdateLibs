@@ -1,18 +1,7 @@
 project(hexsign)
 
-include(FetchContent)
-
-FetchContent_Declare(
-  argparse
-  GIT_REPOSITORY https://github.com/p-ranav/argparse.git
-  GIT_TAG        v3.2
-)
-
-FetchContent_MakeAvailable(argparse)
-
 add_executable(${PROJECT_NAME}
     base64.cpp
-    hexfile.cpp
     hexsign.cpp
     openSSH_key.cpp
 )
@@ -22,6 +11,7 @@ target_link_libraries(${PROJECT_NAME}
         argparse::argparse
         libs::ed25519
         libs::fragmentstore
+        libs::hexfile
 )
 
 target_link_options(${PROJECT_NAME}
