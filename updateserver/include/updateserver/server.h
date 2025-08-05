@@ -27,8 +27,8 @@
  * @brief Interface for update server
 */
 
-#ifndef SERVER_H_
-#define SERVER_H_
+#ifndef UPDATESERVER_SERVER_H_
+#define UPDATESERVER_SERVER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,4 +151,4 @@ extern size_t US_ProcessRequest(
 
 /* EoF server.h */
 
-#endif /* SERVER_H_ */
+#endif /* UPDATESERVER_SERVER_H_ */

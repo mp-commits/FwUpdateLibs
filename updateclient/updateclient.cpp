@@ -154,9 +154,9 @@ static void ReadFirmwareName(UpdateClient& client)
 int main(int argc, const char* argv[])
 {
 
-    const char* ip = "127.0.0.1";
+    const char* ip = "192.168.1.50";
     const uint16_t myPort = 7;
-    const uint16_t remotePort = 8;
+    const uint16_t remotePort = 7;
 
     UdpSocket socket(myPort);
     socket.SetRemoteAddress(ip, remotePort);

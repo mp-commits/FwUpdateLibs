@@ -39,7 +39,7 @@
 /* MACRO DEFINITIONS                                                          */
 /*----------------------------------------------------------------------------*/
 
-constexpr size_t UDP_MAX_PAYLOAD_SIZE = 1470U;
+constexpr size_t UDP_MAX_PAYLOAD_SIZE = 512;
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE FUNCTION DEFINITIONS                                               */

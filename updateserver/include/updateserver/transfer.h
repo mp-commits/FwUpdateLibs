@@ -27,8 +27,8 @@
  * @brief {Short description of the source file}
 */
 
-#ifndef TRANSFER_H_
-#define TRANSFER_H_
+#ifndef UPDATESERVER_TRANSFER_H_
+#define UPDATESERVER_TRANSFER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,4 +106,4 @@ extern size_t TRANSFER_Process(
 
 /* EoF transfer.h */
 
-#endif /* TRANSFER_H_ */
+#endif /* UPDATESERVER_TRANSFER_H_ */
