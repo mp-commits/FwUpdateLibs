@@ -181,7 +181,7 @@ std::vector<uint8_t> UpdateClient::ReadDataById(uint8_t id)
 
 bool UpdateClient::WriteDataById(uint8_t id, const std::vector<uint8_t>& data)
 {
-    std::vector<uint8_t> req = {PROTOCOL_SID_READ_DATA_BY_ID, id};
+    std::vector<uint8_t> req = {PROTOCOL_SID_WRITE_DATA_BY_ID, id};
     req.insert(req.end(), data.begin(), data.end());
   
     if (IsPositiveProtocolResponse(_Request(req), PROTOCOL_SID_WRITE_DATA_BY_ID))

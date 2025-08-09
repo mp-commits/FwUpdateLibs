@@ -192,6 +192,11 @@ int main(int argc, const char* argv[])
         }
     }
 
+    std::cout << "Writing update request" << std::endl;
+    std::vector<uint8_t> metadataBuffer(sizeof(Metadata_t));
+    mempcpy(metadataBuffer.data(), &sec.metadata, metadataBuffer.size());
+    client.WriteDataById(PROTOCOL_DATA_ID_FIRMWARE_UPDATE, metadataBuffer);
+
     return 0;
 }
 
