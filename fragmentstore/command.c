@@ -187,7 +187,7 @@ static bool WriteHistoryMemory(
 
 bool CA_InitStruct(
     CommandArea_t* ca, 
-    MemoryConfig_t* memConf,
+    const MemoryConfig_t* memConf,
     Crc32_t Crc32
 )
 {
@@ -247,8 +247,6 @@ CommandStatus_t CA_GetStatus(
     {
         return COMMAND_STATE_FAILED;
     }
-
-    CommandStatus_t cmd = COMMAND_STATE_NONE;
 
     StateMemory_t mem;
     const bool res = ca->memoryConfig->Reader(

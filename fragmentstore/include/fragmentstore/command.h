@@ -49,7 +49,7 @@ typedef uint32_t (*Crc32_t)(const uint8_t* msg, size_t len);
 
 typedef struct
 {
-    MemoryConfig_t* memoryConfig;
+    const MemoryConfig_t* memoryConfig;
     Crc32_t         Crc32;
 
     Address_t       commandAddress;
@@ -80,7 +80,7 @@ typedef enum {
 
 extern bool CA_InitStruct(
     CommandArea_t* ca, 
-    MemoryConfig_t* memConf,
+    const MemoryConfig_t* memConf,
     Crc32_t Crc32
 );
 
