@@ -212,8 +212,9 @@ bool CA_InitStruct(
         return false;
     }
 
+    ca->memoryConfig = memConf;
+    ca->Crc32 = Crc32;
     
-
     const size_t insSectors = GetRequiredSectors(ca, sizeof(InstallMemory_t));
     const size_t histSectors = GetRequiredSectors(ca, sizeof(HistoryMemory_t));
     const size_t statSectors = GetRequiredSectors(ca, sizeof(StateMemory_t));
@@ -228,8 +229,6 @@ bool CA_InitStruct(
     const Address_t ba = memConf->baseAddress;
     const size_t    ss = memConf->sectorSize;
 
-    ca->memoryConfig = memConf;
-    ca->Crc32 = Crc32;
     ca->commandAddress = ba;
     ca->historyAddress = ba + (insSectors * ss);
     ca->stateAddress = ca->historyAddress + (histSectors * ss);
@@ -375,6 +374,23 @@ bool CA_WriteInstallCommand(
     );
 
     if (!WriteInstallMemory(ca, &mem))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool CA_EraseInstallCommand(
+    const CommandArea_t* ca
+)
+{
+    if (IS_NULL(ca))
+    {
+        return false;
+    }
+
+    if (!EraseInstallMemory(ca))
     {
         return false;
     }

@@ -75,14 +75,6 @@ typedef enum {
 } CommandStatus_t;
 
 /*----------------------------------------------------------------------------*/
-/* PUBLIC MACRO DEFINITIONS                                                   */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/* PUBLIC VARIABLE DEFINITIONS                                                */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /* PUBLIC FUNCTION DECLARATIONS                                               */
 /*----------------------------------------------------------------------------*/
 
@@ -105,6 +97,10 @@ extern bool CA_WriteInstallCommand(
     const CommandArea_t* ca, 
     CommandType_t cmd,
     const Metadata_t* metadata
+);
+
+extern bool CA_EraseInstallCommand(
+    const CommandArea_t* ca
 );
 
 extern bool CA_ReadInstallCommand(

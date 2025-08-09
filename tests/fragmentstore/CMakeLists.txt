@@ -17,3 +17,18 @@ add_catch2_test_suite(
         testing::flash
         libs::ed25519
 )
+
+add_catch2_test_suite(
+    TEST_NAME
+        command_tests
+
+    TEST_SOURCES
+        command_test.cpp
+        ${FWUPDATELIBS_ROOT}/fragmentstore/command.c
+
+    TEST_INCLUDE_PATHS
+        ${FWUPDATELIBS_ROOT}/fragmentstore/include
+    
+    TEST_LINK_LIBRARIES
+        testing::flash
+)
