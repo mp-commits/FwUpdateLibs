@@ -393,6 +393,11 @@ bool CA_EraseInstallCommand(
         return false;
     }
 
+    if (!EraseStateMemory(ca))
+    {
+        return false;
+    }
+
     return true;
 }
 
