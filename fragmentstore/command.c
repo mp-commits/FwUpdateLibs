@@ -345,9 +345,14 @@ bool CA_WriteInstallCommand(
     const Metadata_t* metadata
 )
 {
-    if (IS_NULL(ca) ||
-        IS_NULL(metadata))
+    if (IS_NULL(ca))
     {
+        return false;
+    }
+
+    if (IS_NULL(metadata) && (cmd == COMMAND_TYPE_INSTALL_FIRMWARE))
+    {
+        /* Target metadata is mandatory for install command */
         return false;
     }
 
@@ -365,7 +370,12 @@ bool CA_WriteInstallCommand(
     memset(&mem, 0, sizeof(InstallMemory_t));
 
     mem.command = (uint32_t)cmd;
-    memcpy(&mem.metadata, metadata, sizeof(Metadata_t));
+
+    if (!IS_NULL(metadata))
+    {
+        memcpy(&mem.metadata, metadata, sizeof(Metadata_t));
+    }
+
     mem.crc32 = ca->Crc32(
         (const uint8_t*)(&mem), 
         sizeof(InstallMemory_t) - sizeof(uint32_t)
@@ -446,6 +456,9 @@ bool CA_ReadInstallCommand(
         {
         case (uint32_t)COMMAND_TYPE_INSTALL_FIRMWARE:
             *cmd = COMMAND_TYPE_INSTALL_FIRMWARE;
+            break;
+        case (uint32_t)COMMAND_TYPE_ROLLBACK:
+            *cmd = COMMAND_TYPE_ROLLBACK;
             break;
         default:
             *cmd = COMMAND_TYPE_ERROR;

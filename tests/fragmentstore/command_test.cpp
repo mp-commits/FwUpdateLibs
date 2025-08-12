@@ -275,4 +275,35 @@ TEST_CASE("Installation procedure")
     }
 }
 
+TEST_CASE("Write-read rollback command")
+{
+    CommandArea_t ca;
+    MemoryConfig_t memConf;
+
+    InitTestSuite(ca, memConf);
+
+    const Metadata_t random = MakeRandom<Metadata_t>();
+    const Metadata_t empty = MakeEmpty<Metadata_t>();
+    const Metadata_t* expected = nullptr;
+    Metadata_t read = MakeRandom<Metadata_t>();
+
+    REQUIRE(!MetadataEqual(&random, &read));
+
+    SECTION("Specific rollback command")
+    {
+        REQUIRE(CA_WriteInstallCommand(&ca, COMMAND_TYPE_ROLLBACK, &random));
+        expected = &random;
+    }
+    SECTION("Empty rollback command")
+    {
+        REQUIRE(CA_WriteInstallCommand(&ca, COMMAND_TYPE_ROLLBACK, nullptr));
+        expected = &empty;
+    }
+
+    CommandType_t cmd = COMMAND_TYPE_ERROR;
+    REQUIRE(CA_ReadInstallCommand(&ca, &cmd, &read));
+    REQUIRE(cmd == COMMAND_TYPE_ROLLBACK);
+    REQUIRE(MetadataEqual(&read, expected));
+}
+
 // EoF command_test.cpp

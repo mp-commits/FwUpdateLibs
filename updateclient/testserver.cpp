@@ -113,7 +113,9 @@ static uint8_t TEST_WriteDataById(
     std::stringstream ss;
     ss << std::hex;
     ss << "Wrote data id " << (uint32_t)(id);
-    ss << " content";
+    ss << std::dec;
+    ss << " content of " << size << " bytes: ";
+    ss << std::hex;
     for (size_t i = 0; i < size; i++)
     {
         ss << " " << (uint32_t)(in[i]);

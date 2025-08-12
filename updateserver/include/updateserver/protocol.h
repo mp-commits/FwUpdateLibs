@@ -60,6 +60,7 @@ extern "C" {
 #define PROTOCOL_DATA_ID_FIRMWARE_TYPE      (0x02U)
 #define PROTOCOL_DATA_ID_FIRMWARE_NAME      (0x03U)
 #define PROTOCOL_DATA_ID_FIRMWARE_UPDATE    (0x10U)
+#define PROTOCOL_DATA_ID_FIRMWARE_ROLLBACK  (0x11U)
 
 #ifdef __cplusplus
 } /* extern C */

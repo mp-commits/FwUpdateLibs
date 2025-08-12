@@ -64,6 +64,7 @@ typedef enum {
     COMMAND_TYPE_NONE,
     COMMAND_TYPE_ERROR,
     COMMAND_TYPE_INSTALL_FIRMWARE = 0xA5A5,
+    COMMAND_TYPE_ROLLBACK = 0xD17D,
 } CommandType_t;
 
 typedef enum {
