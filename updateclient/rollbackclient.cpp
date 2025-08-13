@@ -156,6 +156,9 @@ int main(int argc, const char* argv[])
     std::cout << "Writing rollback request" << std::endl;
     client.WriteDataById(PROTOCOL_DATA_ID_FIRMWARE_ROLLBACK, rollbackArg);
 
+    std::cout << "Writing reset request" << std::endl;
+    client.WriteDataById(PROTOCOL_DATA_ID_RESET, {0});
+
     return 0;
 }
 

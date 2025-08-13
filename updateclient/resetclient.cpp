@@ -22,51 +22,44 @@
  *
  * -----------------------------------------------------------------------------
  *
- * protocol.h
+ * resetclient.cpp
  *
- * @brief Protocol definitions for update server
+ * @brief Simple client for issuing reset command to an updateserver
 */
 
-#ifndef PROTOCOL_H_
-#define PROTOCOL_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*----------------------------------------------------------------------------*/
-/* PUBLIC MACRO DEFINITIONS                                                   */
+/* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
-#define TRANSFER_SINGLE_PACKET          (0x00)
-#define TRANSFER_MULTI_PACKET_INIT      (0x01)
-#define TRANSFER_MULTI_PACKET_TRANSFER  (0x02)
-#define TRANSFER_MULTI_PACKET_END       (0x03)
+#include "client.hpp"
+#include "udpsocket.hpp"
 
-#define PROTOCOL_SID_PING               (0x01U)
-#define PROTOCOL_SID_READ_DATA_BY_ID    (0x02U)
-#define PROTOCOL_SID_WRITE_DATA_BY_ID   (0x03U)
-#define PROTOCOL_SID_PUT_METADATA       (0x10U)
-#define PROTOCOL_SID_PUT_FRAGMENT       (0x11U)
+#include "argparse/argparse.hpp"
+#include "updateserver/protocol.h"
 
-#define PROTOCOL_ACK_OK                     (0x00U)
-#define PROTOCOL_NACK_REQUEST_OUT_OF_RANGE  (0xE0U)
-#define PROTOCOL_NACK_INVALID_REQUEST       (0xE1U)
-#define PROTOCOL_NACK_BUSY_REPEAT_REQUEST   (0xE2U)
-#define PROTOCOL_NACK_REQUEST_FAILED        (0xE3U)
-#define PROTOCOL_NACK_INTERNAL_ERROR        (0xE4U)
+#include <fstream>
+#include <string>
+#include <vector>
 
-#define PROTOCOL_DATA_ID_FIRMWARE_VERSION   (0x01U)
-#define PROTOCOL_DATA_ID_FIRMWARE_TYPE      (0x02U)
-#define PROTOCOL_DATA_ID_FIRMWARE_NAME      (0x03U)
-#define PROTOCOL_DATA_ID_FIRMWARE_UPDATE    (0x10U)
-#define PROTOCOL_DATA_ID_FIRMWARE_ROLLBACK  (0x11U)
-#define PROTOCOL_DATA_ID_RESET              (0x12U)
+/*----------------------------------------------------------------------------*/
+/* PUBLIC FUNCTION DEFINITIONS                                                */
+/*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-} /* extern C */
-#endif
+int main(int argc, const char* argv[])
+{
 
-/* EoF protocol.h */
+    const char* ip = "192.168.1.50";
+    const uint16_t myPort = 7;
+    const uint16_t remotePort = 7;
 
-#endif /* PROTOCOL_H_ */
+    UdpSocket socket(myPort);
+    socket.SetRemoteAddress(ip, remotePort);
+    UpdateClient client(socket);
+
+    std::cout << "Writing reset request" << std::endl;
+    client.WriteDataById(PROTOCOL_DATA_ID_RESET, {0});
+
+    return 0;
+}
+
+/* EoF updateclient.cpp */

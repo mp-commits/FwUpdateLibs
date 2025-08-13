@@ -197,6 +197,9 @@ int main(int argc, const char* argv[])
     mempcpy(metadataBuffer.data(), &sec.metadata, metadataBuffer.size());
     client.WriteDataById(PROTOCOL_DATA_ID_FIRMWARE_UPDATE, metadataBuffer);
 
+    std::cout << "Writing reset request" << std::endl;
+    client.WriteDataById(PROTOCOL_DATA_ID_RESET, {0});
+
     return 0;
 }
 
