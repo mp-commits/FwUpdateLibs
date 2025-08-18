@@ -147,23 +147,74 @@ static void ReadFirmwareName(UpdateClient& client)
     std::cout << "Firmware name: " << std::string(data.begin(), data.end()) << std::endl;
 }
 
+static void AddArguments(argparse::ArgumentParser& parser)
+{
+    parser.add_argument("-i", "--input")
+        .help("Input HEX file")
+        .required();
+
+    parser.add_argument("-a", "--address")
+        .help("Destination IP address")
+        .required();
+
+    parser.add_argument("-p", "--port")
+        .help("Destination IP port")
+        .required();
+    
+    parser.add_argument("--localport")
+        .help("Optional local IP port if different from remote port");
+}
+
 /*----------------------------------------------------------------------------*/
 /* PUBLIC FUNCTION DEFINITIONS                                                */
 /*----------------------------------------------------------------------------*/
 
 int main(int argc, const char* argv[])
 {
+    argparse::ArgumentParser parser("Upload tool v0.1");
+    AddArguments(parser);
 
-    const char* ip = "192.168.1.50";
-    const uint16_t myPort = 7;
-    const uint16_t remotePort = 7;
+    std::string ip;
+    int localPort = 0;
+    int remotePort = 0;
+    std::string hexFile;
 
-    UdpSocket socket(myPort);
-    socket.SetRemoteAddress(ip, remotePort);
+    try
+    {
+        parser.parse_args(argc, argv);
+
+        std::string localPortStr;
+        std::string remotePortStr;
+
+        ip = parser.get("-a");
+        localPortStr = parser.get("-p");
+        hexFile = parser.get("-i");
+
+        try
+        {
+            remotePortStr = parser.get("--localport");
+        }
+        catch(...)
+        {
+            remotePortStr = localPortStr;
+        }
+
+        localPort = std::stoi(localPortStr);
+        remotePort = std::stoi(remotePortStr);
+    }
+    catch (const std::exception& err)
+    {
+        std::cerr << err.what() << std::endl;
+        std::cerr << parser;
+        return -1;
+    }
+
+    UdpSocket socket(localPort);
+    socket.SetRemoteAddress(ip.c_str(), remotePort);
     UpdateClient client(socket);
 
     FirmwareSections_t sec;
-    MakeFirmwareSections("C:/Users/mikael/Desktop/git/reliable_fw_update/new_freertos_app/build/Debug/new_freertos_app_signed.hex", sec);
+    MakeFirmwareSections(hexFile, sec);
 
     ReadFirmwareVersion(client);
     ReadFirmwareType(client);
@@ -176,7 +227,7 @@ int main(int argc, const char* argv[])
     else
     {
         std::cout << "Metadata upload fail!" << std::endl;
-        return 1U;
+        return 1;
     }
 
     for (const auto& frag: sec.fragments)
@@ -188,7 +239,7 @@ int main(int argc, const char* argv[])
         else
         {
             std::cout << "Fragment upload fail!" << std::endl;
-            return 2U;
+            return 2;
         }
     }
 
