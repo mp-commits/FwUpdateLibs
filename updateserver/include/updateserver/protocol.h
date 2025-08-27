@@ -62,6 +62,7 @@ extern "C" {
 #define PROTOCOL_DATA_ID_FIRMWARE_UPDATE    (0x10U)
 #define PROTOCOL_DATA_ID_FIRMWARE_ROLLBACK  (0x11U)
 #define PROTOCOL_DATA_ID_RESET              (0x12U)
+#define PROTOCOL_DATA_ID_ERASE_SLOT         (0x13U)
 
 #ifdef __cplusplus
 } /* extern C */
