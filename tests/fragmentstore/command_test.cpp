@@ -136,6 +136,19 @@ static void InitTestSuite(CommandArea_t& ca, MemoryConfig_t& memConf)
     REQUIRE(CA_InitStruct(&ca, &memConf, &Crc32));
 }
 
+static bool TestFlashEmpty()
+{
+    for (size_t i = 0; i < sizeof(TEST_FLASH_MEMORY); i++)
+    {
+        if (0xFF != TEST_FLASH_MEMORY[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // -----------------------------------------------------------------------------
 // TEST CASE DEFINITIONS
 // -----------------------------------------------------------------------------
@@ -304,6 +317,58 @@ TEST_CASE("Write-read rollback command")
     REQUIRE(CA_ReadInstallCommand(&ca, &cmd, &read));
     REQUIRE(cmd == COMMAND_TYPE_ROLLBACK);
     REQUIRE(MetadataEqual(&read, expected));
+}
+
+TEST_CASE("User status words")
+{
+    CommandArea_t ca;
+    MemoryConfig_t memConf;
+
+    InitTestSuite(ca, memConf);
+
+    SECTION("Invalid status words")
+    {
+        REQUIRE_FALSE(CA_SetUserStatus(&ca, 0xA1A1A1A1));
+        REQUIRE_FALSE(CA_SetUserStatus(&ca, 0xB2B2B2B2));
+        REQUIRE_FALSE(CA_SetUserStatus(&ca, 0xEEEEEEEE));
+        REQUIRE(TestFlashEmpty);
+    }
+    SECTION("Valid status words")
+    {
+        uint32_t userStatusWord;
+
+        WHEN("0x01010101")
+        {
+            userStatusWord = 0x01010101;
+        }
+        WHEN("0xDEADBEED")
+        {
+            userStatusWord = 0xDEADBEED;
+        }
+        WHEN("0xABBA")
+        {
+            userStatusWord = 0xABBA;
+        }
+
+        REQUIRE(CA_SetUserStatus(&ca, userStatusWord));
+        REQUIRE(CA_GetUserStatus(&ca, userStatusWord));
+    }
+    SECTION("Multiple user status words")
+    {
+        REQUIRE(CA_SetUserStatus(&ca, 0x01010101));
+        REQUIRE(CA_GetUserStatus(&ca, 0x01010101));
+
+        REQUIRE(CA_SetUserStatus(&ca, 0x02020202));
+
+        REQUIRE(CA_GetUserStatus(&ca, 0x01010101));
+        REQUIRE(CA_GetUserStatus(&ca, 0x02020202));
+
+        REQUIRE(CA_SetUserStatus(&ca, 0x03030303));
+        
+        REQUIRE(CA_GetUserStatus(&ca, 0x01010101));
+        REQUIRE(CA_GetUserStatus(&ca, 0x02020202));
+        REQUIRE(CA_GetUserStatus(&ca, 0x03030303));
+    }
 }
 
 // EoF command_test.cpp

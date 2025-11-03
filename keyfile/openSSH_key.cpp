@@ -31,7 +31,7 @@
 /* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
-#include "openSSH_key.hpp"
+#include "keyfile/openSSH_key.hpp"
 #include "base64.hpp"
 
 #include <cstring>

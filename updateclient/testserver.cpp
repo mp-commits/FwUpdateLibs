@@ -32,19 +32,39 @@
 /*----------------------------------------------------------------------------*/
 
 #include "crc32.hpp"
+
+extern "C" {
+    #include "ed25519_extra.h"
+    #include "ed25519.h"
+    #include "sha512.h"
+}
+
+#include "keyfile/openSSH_key.hpp"
+#include "fragmentstore/fragmentstore.h" // Default types
 #include "udpsocket.hpp"
 #include "updateserver/server.h"
 #include "updateserver/protocol.h"
 #include "updateserver/transfer.h"
 
+#include <stdio.h>
+#include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 #include <iostream>
 #include <csignal>
+#include <map>
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE TYPE DEFINITIONS                                                   */
 /*----------------------------------------------------------------------------*/
+
+typedef struct
+{
+    Metadata_t recvMetadata;
+    std::map<uint32_t, Fragment_t> recvFragments;
+    KeyPair keys;
+} TestServer_t;
 
 /*----------------------------------------------------------------------------*/
 /* MACRO DEFINITIONS                                                          */
@@ -57,15 +77,164 @@ std::cout << #x << " failed!" << std::endl; \
 return -1; \
 }
 
+#define APP_METADATA_ADDRESS  0x08010000U
+#define FIRST_FLASH_ADDRESS   (APP_METADATA_ADDRESS + sizeof(Metadata_t))
+#define LAST_FLASH_ADDRESS    (0x82000000U)
+
 /*----------------------------------------------------------------------------*/
 /* VARIABLE DEFINITIONS                                                       */
 /*----------------------------------------------------------------------------*/
+
+static TestServer_t f_self;
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE FUNCTION DEFINITIONS                                               */
 /*----------------------------------------------------------------------------*/
 
-void SignalHandler( int signum )
+static void PrintBytes(const uint8_t* buf, size_t len, const char* header = nullptr)
+{
+    if (header)
+    {
+        printf("%s", header);
+    }
+
+    for (size_t i = 0; i < len; i++)
+    {
+        printf("%2X ", buf[i]);
+    }
+    printf("\r\n");
+}
+
+static bool VerifyMetadata(const Metadata_t* meta)
+{
+    const uint8_t* msg = (const uint8_t*)(meta);
+    const size_t msgLen = sizeof(Metadata_t)-sizeof(meta->metadataSignature);
+    return 1 == ed25519_verify(meta->metadataSignature, msg, msgLen, f_self.keys.GetPublicKey().data());
+}
+
+static bool VerifyFragment(const Fragment_t* frag)
+{
+    const uint8_t* msg = (const uint8_t*)(frag);
+    const size_t msgLen = sizeof(Fragment_t)-sizeof(frag->signature);
+
+    if (0U == frag->verifyMethod)
+    {
+        printf("Verifying fragment with ed25519\r\n");
+        return 1 == ed25519_verify(frag->signature, msg, msgLen, f_self.keys.GetPublicKey().data());
+    }
+    else if (1U == frag->verifyMethod)
+    {
+        uint8_t inHash[64];
+        sha512_context ctx;
+        sha512_init(&ctx);
+
+        printf("Verifying fragment with sha512\r\n");
+
+        if (0U == frag->number)
+        {
+            sha512_update(&ctx, f_self.recvMetadata.metadataSignature, 64U);
+        }
+        else
+        {
+            const uint32_t pIdx = frag->number - 1U;
+            if (f_self.recvFragments.find(pIdx) == f_self.recvFragments.end())
+            {
+                return false;
+            }
+            sha512_update(&ctx, f_self.recvFragments.at(pIdx).sha512, 64U);
+        }
+
+        sha512_update(&ctx, msg, msgLen);
+        sha512_final(&ctx, inHash);
+
+        return 0 == memcmp(inHash, frag->sha512, 64U);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static bool TryInstallFirmware(const Metadata_t* meta)
+{
+    int cmp = memcmp(meta, &f_self.recvMetadata, sizeof(Metadata_t));
+
+    if (cmp != 0)
+    {
+        printf("Metadata arg not equal to uploaded firmware");
+        return false;
+    }
+
+    ed25519_multipart_t ctx;
+    int ed = ed25519_multipart_init(&ctx, f_self.recvMetadata.firmwareSignature, f_self.keys.GetPublicKey().data());
+
+    if (ed != 1)
+    {
+        printf("ed25519_multipart_init failed");
+        return false;
+    }
+
+    uint32_t nextStart = FIRST_FLASH_ADDRESS;
+    uint32_t nextIdx = 0;
+
+    for (const auto& entry: f_self.recvFragments)
+    {
+        if (entry.first != nextIdx)
+        {
+            printf("Fragment map key incorrect\r\n");
+        }
+        else
+        {
+            nextIdx++;
+        }
+
+        const Fragment_t* frag = &entry.second;
+        
+        if (frag->startAddress != nextStart)
+        {
+            printf("Fragment %u: unexpected start address: %lX, expected %lX\r\n", frag->number, frag->startAddress, nextStart);
+            return false;
+        }
+        else
+        {
+            nextStart += frag->size;
+        }
+
+        uint32_t verifyOffset = 0U;
+        size_t   verifyLen = frag->size;
+
+        if (frag->startAddress < meta->startAddress)
+        {
+            verifyOffset = meta->startAddress - frag->startAddress;
+        }
+
+        if (verifyOffset < verifyLen)
+        {
+            verifyLen -= verifyOffset;
+        }
+
+        if (verifyLen > 0U)
+        {
+            ed = ed25519_multipart_continue(&ctx, &frag->content[verifyOffset], verifyLen);
+            if (ed != 1U)
+            {
+                printf("ed25519_multipart_continue failed\r\n");
+                return false;
+            }
+        }
+    }
+
+    ed = ed25519_multipart_end(&ctx);
+    if (ed != 1U)
+    {
+        printf("ed25519_multipart_end failed\r\n");
+        return false;
+    }
+
+    return true;
+}
+
+static void SignalHandler( int signum )
 {
    exit(2);
 }
@@ -123,6 +292,18 @@ static uint8_t TEST_WriteDataById(
 
     std::cout << ss.str() << std::endl;
 
+    if ((id == PROTOCOL_DATA_ID_FIRMWARE_UPDATE) && 
+        (size == sizeof(Metadata_t)))
+    {
+        const Metadata_t* meta = (const Metadata_t*)(in);
+        if (TryInstallFirmware(meta))
+        {
+            printf("INSTALL OK!\r\n");
+            return PROTOCOL_ACK_OK;
+        }
+        return PROTOCOL_NACK_REQUEST_FAILED;
+    }
+
     return PROTOCOL_ACK_OK;
 }
 
@@ -132,11 +313,31 @@ static uint8_t TEST_PutMetadata(
 {
     std::stringstream ss;
     ss << std::hex;
-    ss << "Wrote metadata " << InlineCrc32(data, size);
-
+    ss << "Received metadata " << InlineCrc32(data, size);
     std::cout << ss.str() << std::endl;
 
-    return PROTOCOL_ACK_OK;
+    if (size == sizeof(Metadata_t))
+    {
+        // PrintBytes(data, size);
+        const Metadata_t* meta = (const Metadata_t*)data;
+        if (VerifyMetadata(meta))
+        {
+            std::cout << "Metadata OK" << std::endl;
+            f_self.recvMetadata = *meta;
+            return PROTOCOL_ACK_OK;
+        }
+        else
+        {
+            std::cout << "Metadata invalid" << std::endl;
+        }
+        return PROTOCOL_NACK_INVALID_REQUEST;
+    }
+    else
+    {
+        std::cout << "Metadata wrong size" << std::endl;
+    }
+
+    return PROTOCOL_NACK_REQUEST_OUT_OF_RANGE;
 }
 
 static uint8_t TEST_PutFragment(
@@ -145,11 +346,24 @@ static uint8_t TEST_PutFragment(
 {
     std::stringstream ss;
     ss << std::hex;
-    ss << "Wrote fragment " << InlineCrc32(data, size);
-
+    ss << "Received fragment " << InlineCrc32(data, size);
     std::cout << ss.str() << std::endl;
 
-    return PROTOCOL_ACK_OK;
+    if (size == sizeof(Fragment_t))
+    {
+        const Fragment_t* frag = (const Fragment_t*)data;
+        if (VerifyFragment(frag))
+        {
+            f_self.recvFragments[frag->number] = *frag;
+            return PROTOCOL_ACK_OK;
+        }
+        else
+        {
+            return PROTOCOL_NACK_INVALID_REQUEST;
+        }
+    }
+
+    return PROTOCOL_NACK_REQUEST_OUT_OF_RANGE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -159,7 +373,22 @@ static uint8_t TEST_PutFragment(
 int main(int argc, const char* argv[])
 {
     signal(SIGINT, SignalHandler);
-    
+    f_self = (TestServer_t){0};
+
+    if (argc != 2)
+    {
+        std::cout << "Required args: testserver ./path/to/id_ed25519" << std::endl;
+        return -1;
+    }
+
+    {
+        std::ifstream keyFile(argv[1]);
+        f_self.keys.FromFile(keyFile);
+        std::cout << "Loaded keys from " << argv[1] << std::endl;
+        PrintBytes(f_self.keys.GetPrivateKey().data(), f_self.keys.GetPrivateKey().size(), "Private key: ");
+        PrintBytes(f_self.keys.GetPublicKey().data(), f_self.keys.GetPublicKey().size(), "Public key: ");
+    }
+
     static UdpSocket udp(8U);
 
     uint8_t packet[1472U];

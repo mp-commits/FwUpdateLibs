@@ -207,6 +207,22 @@ extern FA_ReturnCode_t FA_ReadFragment(
     size_t index,
     Fragment_t* fragment);
 
+/** Read fragment from area and ignore invalid content
+ * 
+ * @param area Fragment area
+ * @param index Fragment slot index between 0 and FA_GetMaxFragmentIndex()
+ * @param fragment Allocated memory for fragment output
+ * 
+ * @return OK when read is successful (valid or invalid fragment)
+ * @return EMPTY if fragment is empty
+ * @return BUSY if memory is busy
+ * @return PARAM if parameters are invalid
+ */
+extern FA_ReturnCode_t FA_ReadFragmentForce(
+    const FragmentArea_t* const area,
+    size_t index,
+    Fragment_t* fragment);
+
 /** Write firmware metadata to fragment area
  * 
  * @param area Fragment area handle
@@ -270,6 +286,24 @@ extern FA_ReturnCode_t FA_EraseFragmentSlot(
  * @return PARAM=Function params invalid
  */
 extern FA_ReturnCode_t FA_FindLastFragment(
+    const FragmentArea_t* const area,
+    Fragment_t* fragment,
+    size_t* index);
+
+/** Search fragment area slots using linear search until either:
+ *  1. No more empty slots are found (last fragment)
+ *  2. Any invalid fragment is found (invalid fragment at some index)
+ * 
+ * @param area Fragment area handle
+ * @param fragment Working memory buffer for one fragment at a time
+ * @param index Search result index at the time of return
+ * 
+ * @return OK=Last fragment index found
+ * @return INVALID=Invalid fragment index found
+ * @return BUSY=Memory was busy
+ * @return PARAM=Function params invalid
+ */
+extern FA_ReturnCode_t FA_FindLastFragmentLinear(
     const FragmentArea_t* const area,
     Fragment_t* fragment,
     size_t* index);
