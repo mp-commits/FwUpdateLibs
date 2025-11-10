@@ -316,6 +316,37 @@ FA_ReturnCode_t FA_ReadFragment(
     return FA_ERR_OK;
 }
 
+FA_ReturnCode_t FA_ReadFragmentForce(
+    const FragmentArea_t* const area,
+    size_t index,
+    Fragment_t* fragment)
+{
+    if (IS_NULL(area) ||
+        IS_NULL(fragment))
+    {
+        return FA_ERR_PARAM;
+    }
+
+    const Address_t address = GetFragmentAddress(area, index);
+
+    if (!CheckAddressValidity(area, address, sizeof(Fragment_t)))
+    {
+        return FA_ERR_PARAM;
+    }
+
+    if (!TryReadFragment(area, address, fragment))
+    {
+        return FA_ERR_BUSY;
+    }
+
+    if (IsEmpty(area, (const uint8_t*)fragment, sizeof(Fragment_t)))
+    {
+        return FA_ERR_EMPTY;
+    }
+
+    return FA_ERR_OK;
+}
+
 FA_ReturnCode_t FA_WriteMetadata(
     const FragmentArea_t* const area,
     const Metadata_t* metadata)
@@ -451,6 +482,55 @@ FA_ReturnCode_t FA_FindLastFragment(
             }
             *index = middle;
             left = middle + 1U;
+        }
+    }
+
+    return FA_ERR_OK;
+}
+
+FA_ReturnCode_t FA_FindLastFragmentLinear(
+    const FragmentArea_t* const area,
+    Fragment_t* fragment,
+    size_t* index)
+{
+    if (IS_NULL(area) ||
+        IS_NULL(fragment) ||
+        IS_NULL(index))
+    {
+        return FA_ERR_PARAM;
+    }
+
+    const size_t stop = FA_GetMaxFragmentIndex(area);
+
+    for (size_t i = 0; i < stop; i++)
+    {
+        const Address_t address = GetFragmentAddress(area, i);
+
+        if (!TryReadFragment(area, address, fragment))
+        {
+            /* Memory busy. Stop */
+            return FA_ERR_BUSY;
+        }
+
+        if (IsEmpty(area, (const uint8_t*)fragment, sizeof(Fragment_t)))
+        {
+            if (0U == i)
+            {
+                /* First fragment is empty -> store empty */
+                return FA_ERR_EMPTY;
+            }
+            break;
+        }
+        else if (!TryValidateFragment(area, fragment))
+        {
+            /* Invalid fragment. Stop and report index */
+            *index = i;
+            return FA_ERR_INVALID;
+        }
+        else
+        {
+            /* Valid non-empty fragment, continue search */
+            *index = i;
         }
     }
 

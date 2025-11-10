@@ -192,6 +192,7 @@ static void CreateFragment(Fragment_t& frag, size_t offset)
     frag.size = fragmentSize;
     memcpy(frag.content, &TEST_FIRMWARE_IMAGE.binary[offset], fragmentSize);
 
+    frag.verifyMethod = 0U;
     const uint8_t* data = (const uint8_t*)&frag;
     const size_t dataSize = sizeof(Fragment_t) - sizeof(frag.signature);
     ed25519_sign(frag.signature, data, dataSize, PUBLIC_KEY, PRIVATE_KEY);
@@ -230,6 +231,8 @@ TEST_CASE("Empty flash")
     size_t lastFragmentIndex = 0U;
     FA_ReturnCode_t res = FA_FindLastFragment(&testArea, &fragment, &lastFragmentIndex);
     REQUIRE(res == FA_ERR_EMPTY);
+    res = FA_FindLastFragmentLinear(&testArea, &fragment, &lastFragmentIndex);
+    REQUIRE(res == FA_ERR_EMPTY);
 
     WHEN("One fragment is written")
     {
@@ -237,7 +240,14 @@ TEST_CASE("Empty flash")
         REQUIRE(FA_WriteFragment(&testArea, 0U, &fragment) == FA_ERR_OK);
 
         lastFragmentIndex = SIZE_MAX;
-        res = FA_FindLastFragment(&testArea, &fragment, &lastFragmentIndex);
+        WHEN("Binary search")
+        {
+            res = FA_FindLastFragment(&testArea, &fragment, &lastFragmentIndex);
+        }
+        WHEN("Linear search")
+        {
+            res = FA_FindLastFragmentLinear(&testArea, &fragment, &lastFragmentIndex);
+        }
         REQUIRE(res == FA_ERR_OK);
         REQUIRE(lastFragmentIndex == 0U);
     }
@@ -265,7 +275,15 @@ TEST_CASE("Write-read test firmware")
     size_t lastFragmentIndex = 0;
     Fragment_t readFrag;
     
-    REQUIRE(FA_FindLastFragment(&testArea, &readFrag, &lastFragmentIndex) == FA_ERR_OK);
+    WHEN("Binary search")
+    {
+        REQUIRE(FA_FindLastFragment(&testArea, &readFrag, &lastFragmentIndex) == FA_ERR_OK);
+    }
+    WHEN("Linear search")
+    {
+        REQUIRE(FA_FindLastFragmentLinear(&testArea, &readFrag, &lastFragmentIndex) == FA_ERR_OK);
+    }
+
     REQUIRE(lastFragmentIndex == (NumberOfFragmentsRequired() - 1U));
 
     TestFirmware_t readFirmware;

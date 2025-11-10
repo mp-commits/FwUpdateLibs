@@ -1,9 +1,7 @@
 project(hexsign)
 
 add_executable(${PROJECT_NAME}
-    base64.cpp
     hexsign.cpp
-    openSSH_key.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -12,6 +10,7 @@ target_link_libraries(${PROJECT_NAME}
         libs::ed25519
         libs::fragmentstore
         libs::hexfile
+        libs::keyfile
 )
 
 target_link_options(${PROJECT_NAME}

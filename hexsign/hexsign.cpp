@@ -42,7 +42,7 @@
 #include "ed25519.h"
 #include "hexfile.hpp"
 #include "fragmentstore/fragmentstore.h"
-#include "openSSH_key.hpp"
+#include "keyfile/openSSH_key.hpp"
 
 /*----------------------------------------------------------------------------*/
 /* PRIVATE TYPE DEFINITIONS                                                   */
@@ -230,9 +230,9 @@ static void VerifySectionSignature(const HexFile::Section& sec, const uint8_t* p
 
 int main(int argc, char* argv[])
 {
-    std::cout << "hexsign v0.1" << std::endl;
+    std::cout << "hexsign v0.3" << std::endl;
 
-    argparse::ArgumentParser parser("hexsign v0.1");
+    argparse::ArgumentParser parser("hexsign v0.3");
     AddArguments(parser);
 
     try

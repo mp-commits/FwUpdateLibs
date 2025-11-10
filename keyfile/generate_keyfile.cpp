@@ -22,24 +22,45 @@
  *
  * -----------------------------------------------------------------------------
  *
- * resetclient.cpp
+ * generate_keyfile.cpp
  *
- * @brief Simple client for issuing reset command to an updateserver
+ * @brief Small too for generating header files containing OpenSSH public keys
 */
 
 /*----------------------------------------------------------------------------*/
 /* INCLUDE DIRECTIVES                                                         */
 /*----------------------------------------------------------------------------*/
 
-#include "client.hpp"
-#include "udpsocket.hpp"
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
 #include "argparse/argparse.hpp"
-#include "updateserver/protocol.h"
+#include "keyfile/openSSH_key.hpp"
 
-#include <fstream>
-#include <string>
-#include <vector>
+/*----------------------------------------------------------------------------*/
+/* PRIVATE FUNCTION DEFINITIONS                                               */
+/*----------------------------------------------------------------------------*/
+
+static std::string MakeHexString(const std::vector<uint8_t>& vec, std::string delim = ", ")
+{
+    std::stringstream ss;
+
+    ss << std::hex;
+    bool first = true;
+    for (const auto& byte: vec)
+    {
+        if (!first)
+        {
+            ss << delim;
+        }
+        first = false;
+        ss << "0x" << std::setw(2) << std::setfill('0') << (int)(byte);
+    }
+    
+    return ss.str();
+}
 
 /*----------------------------------------------------------------------------*/
 /* PUBLIC FUNCTION DEFINITIONS                                                */
@@ -47,19 +68,29 @@
 
 int main(int argc, const char* argv[])
 {
+    argparse::ArgumentParser parser("generate_keyfile", "v0.1");
 
-    const char* ip = "192.168.1.50";
-    const uint16_t myPort = 7;
-    const uint16_t remotePort = 7;
+    parser.add_argument("-i", "--input")
+        .help("Input OpenSSH key pair file");
 
-    UdpSocket socket(myPort);
-    socket.SetRemoteAddress(ip, remotePort);
-    UpdateClient client(socket);
+    parser.add_argument("-o", "--output")
+        .help("Output header file");
 
-    std::cout << "Writing reset request" << std::endl;
-    client.WriteDataById(PROTOCOL_DATA_ID_RESET, {0});
+    parser.parse_args(argc, argv);
+
+    std::ifstream keyFile(parser.get("-i"));
+    KeyPair keypair(keyFile);
+    
+    std::ofstream output(parser.get("-o"));
+
+    output << "#ifndef __GENERATED_KEYFILE__\n";
+    output << "#define __GENERATED_KEYFILE__\n";
+    output << "const unsigned char generated_public_key[] = {" << MakeHexString(keypair.GetPublicKey()) << "};\n";
+    output << "#endif\n";
+
+    output.close();
 
     return 0;
 }
 
-/* EoF updateclient.cpp */
+/* EoF generate_keyfile.cpp */

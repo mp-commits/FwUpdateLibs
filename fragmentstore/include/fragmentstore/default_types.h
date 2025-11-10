@@ -39,6 +39,7 @@ extern "C" {
 /*----------------------------------------------------------------------------*/
 
 #include <stdint.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------*/
 /* PUBLIC TYPE DEFINITIONS                                                    */
@@ -48,16 +49,16 @@ extern "C" {
 #define METADATA_TYPE_DEFINED
 struct __attribute__((packed)) Metadata_s
 {
-    char        magic[16];              /* Magic metadata identifier */
-    uint32_t    type;                   /* Firmware type */
-    uint32_t    version;                /* Firmware version */
-    uint32_t    rollbackNumber;         /* Anti rollback number */
-    uint32_t    firmwareId;             /* Unique ID for this firmware */
-    uint32_t    startAddress;           /* Jump address of the firmware */
-    uint32_t    firmwareSize;           /* Bytes following startAddress */
-    char        name[32];               /* Firmware name string */
-    uint8_t     firmwareSignature[64];  /* Firmware data signature */
-    uint8_t     metadataSignature[64];  /* Metadata signature */
+    char        magic[16];                  /* Magic metadata identifier */
+    uint32_t    type;                       /* Firmware type */
+    uint32_t    version;                    /* Firmware version */
+    uint32_t    rollbackNumber;             /* Anti rollback number */
+    uint32_t    firmwareId;                 /* Unique ID for this firmware */
+    uint32_t    startAddress;               /* Jump address of the firmware */
+    uint32_t    firmwareSize;               /* Bytes following startAddress */
+    char        name[32];                   /* Firmware name string */
+    uint8_t     firmwareSignature[64];      /* Firmware data signature */
+    uint8_t     metadataSignature[64];      /* Metadata signature */
 };
 #endif
 
@@ -69,9 +70,16 @@ struct __attribute__((packed)) Fragment_s
     uint32_t    number;         /* Fragment number */
     uint32_t    startAddress;   /* Fragment start address */
     uint32_t    size;           /* Fragment size */
-    uint8_t     content[4016];  /* Fragment data */
-    uint8_t     signature[64];  /* Fragment signature */
+    uint8_t     content[4012];  /* Fragment data */
+    uint32_t    verifyMethod;   /* 0: ed25519, 1: SHA512 chain */
+    union
+    {
+        uint8_t     signature[64];  /* Fragment signature */
+        uint8_t     sha512[64];     /* Fragment SHA512 */
+    };
 };
+typedef struct Fragment_s __DefaultFragment_t;
+static_assert(sizeof(__DefaultFragment_t) == 4096U, "Default fragment type size");
 #endif
 
 #ifndef ADDRESS_TYPE_DEFINED

@@ -54,7 +54,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t states[8U];
+    uint32_t states[64U];
 } StateMemory_t;
 
 /*----------------------------------------------------------------------------*/
@@ -131,6 +131,13 @@ static inline uint32_t GetMagic(CommandStatus_t status)
     default:
         return 0xFFFFFFFFU;
     }
+}
+
+static inline bool IsReservedMagic(uint32_t magic)
+{
+    return  (MAGIC_HISTORY_WRITTEN == magic) ||
+            (MAGIC_FIRMWARE_WRITTEN == magic) ||
+            (MAGIC_FAILED == magic);
 }
 
 static bool EraseInstallMemory(const CommandArea_t* const ca)
@@ -299,7 +306,7 @@ bool CA_SetStatus(
 
     if (!res)
     {
-        return COMMAND_STATE_FAILED;
+        return false;
     }
 
     const uint32_t magic = GetMagic(cmd);
@@ -539,6 +546,98 @@ bool CA_ReadHistory(
     memcpy(metadata, &mem.metadata, sizeof(Metadata_t));
 
     return true;
+}
+
+bool CA_SetUserStatus(
+    const CommandArea_t* ca,
+    uint32_t userMagic
+)
+{
+    if (NULL == ca)
+    {
+        return false;
+    }
+
+    if (IsReservedMagic(userMagic))
+    {
+        return false;
+    }
+
+    StateMemory_t mem;
+    const bool res = ca->memoryConfig->Reader(
+        ca->stateAddress,
+        sizeof(StateMemory_t),
+        (uint8_t*)(&mem)
+    );
+
+    if (!res)
+    {
+        return false;
+    }
+
+    if (EntryExists(&mem, userMagic))
+    {
+        return true;
+    }
+
+    bool commandSet = false;
+
+    for (size_t i = 0; i < ARRAY_SIZE(mem.states); i++)
+    {
+        const uint8_t* bytes = (const uint8_t*)&mem.states[i];
+        if (IsEmptyVal(ca, bytes, sizeof(uint32_t)))
+        {
+            mem.states[i] = userMagic;
+            commandSet = true;
+            break;
+        }
+    }
+
+    if (!commandSet)
+    {
+        return false;
+    }
+
+    return ca->memoryConfig->Writer(
+        ca->stateAddress,
+        sizeof(StateMemory_t),
+        (const uint8_t*)(&mem)
+    );
+}
+
+bool CA_GetUserStatus(
+    const CommandArea_t* ca,
+    uint32_t userMagic
+)
+{
+    if (NULL == ca)
+    {
+        return false;
+    }
+
+    if (IsReservedMagic(userMagic))
+    {
+        return false;
+    }
+
+    StateMemory_t mem;
+    const bool res = ca->memoryConfig->Reader(
+        ca->stateAddress,
+        sizeof(StateMemory_t),
+        (uint8_t*)(&mem)
+    );
+
+    if (!res)
+    {
+        return false;
+    }
+
+    if (EntryExists(&mem, userMagic))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 /* EoF command.c */

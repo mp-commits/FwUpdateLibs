@@ -1,59 +1,3 @@
-project(eraseclient)
-
-add_executable(${PROJECT_NAME}
-    client.cpp
-    eraseclient.cpp
-    udpsocket.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        argparse::argparse
-        libs::fragmentstore
-        libs::updateserver
-)
-
-if (WIN32)
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        wsock32 
-        ws2_32
-)
-endif()
-
-target_link_options(${PROJECT_NAME}
-    PRIVATE
-        -static
-)
-
-project(resetclient)
-
-add_executable(${PROJECT_NAME}
-    client.cpp
-    resetclient.cpp
-    udpsocket.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        argparse::argparse
-        libs::fragmentstore
-        libs::updateserver
-)
-
-if (WIN32)
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        wsock32 
-        ws2_32
-)
-endif()
-
-target_link_options(${PROJECT_NAME}
-    PRIVATE
-        -static
-)
-
 project(updateclient)
 
 add_executable(${PROJECT_NAME}
@@ -65,36 +9,9 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         argparse::argparse
+        libs::ed25519
         libs::hexfile
-        libs::fragmentstore
-        libs::updateserver
-)
-
-if (WIN32)
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        wsock32 
-        ws2_32
-)
-endif()
-
-target_link_options(${PROJECT_NAME}
-    PRIVATE
-        -static
-)
-
-project(rollbackclient)
-
-add_executable(${PROJECT_NAME}
-    client.cpp
-    rollbackclient.cpp
-    udpsocket.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        argparse::argparse
-        libs::hexfile
+        libs::keyfile
         libs::fragmentstore
         libs::updateserver
 )
@@ -122,6 +39,9 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         argparse::argparse
+        libs::ed25519
+        libs::fragmentstore
+        libs::keyfile
         libs::updateserver
 )
 

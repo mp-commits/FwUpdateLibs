@@ -120,6 +120,16 @@ extern bool CA_ReadHistory(
     Metadata_t* metadata
 );
 
+extern bool CA_SetUserStatus(
+    const CommandArea_t* ca,
+    uint32_t userMagic
+);
+
+extern bool CA_GetUserStatus(
+    const CommandArea_t* ca,
+    uint32_t userMagic
+);
+
 #ifdef __cplusplus
 } /* extern C */
 #endif
