@@ -14,3 +14,16 @@ target_include_directories(${PROJECT_NAME}
 )
 
 add_library(libs::keyfile ALIAS ${PROJECT_NAME})
+
+add_executable(generate_keyfile generate_keyfile.cpp)
+
+target_link_libraries(generate_keyfile
+    PRIVATE 
+        argparse::argparse
+        libs::keyfile
+)
+
+target_link_options(generate_keyfile
+    PRIVATE
+        -static
+)
