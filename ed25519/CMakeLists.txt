@@ -3,21 +3,21 @@ project(ed25519)
 add_library(${PROJECT_NAME}
     STATIC 
         extra/ed25519_extra.c
-        src/add_scalar.c
-        src/fe.c
-        src/ge.c
-        src/key_exchange.c
-        src/keypair.c
-        src/sc.c
-        src/seed.c
-        src/sha512.c
-        src/sign.c
-        src/verify.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/add_scalar.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/fe.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/ge.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/key_exchange.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/keypair.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/sc.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/seed.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/sha512.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/sign.c
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src/verify.c
 )
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-        src
+        ${FWUPDATELIBS_ROOT}/submodules/ed25519/src
         extra
 )
 

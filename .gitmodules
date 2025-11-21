@@ -1,0 +1,6 @@
+[submodule "submodules/ed25519"]
+	path = submodules/ed25519
+	url = https://github.com/orlp/ed25519.git
+[submodule "submodules/w25qxx"]
+	path = submodules/w25qxx
+	url = https://github.com/libdriver/w25qxx.git

@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.14)
 project(FwUpdateLibs)
 
 set(FWUPDATELIBS_ROOT ${CMAKE_CURRENT_LIST_DIR})
+add_subdirectory(crc)
 add_subdirectory(ed25519)
 add_subdirectory(fragmentstore)
+add_subdirectory(niram)
 add_subdirectory(updateserver)
+add_subdirectory(w25qxx)
 
 if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
   include(FetchContent)
